@@ -1,24 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/index.css">
-    <title>Chatbot</title>
-</head>
-<body>
-    <h1>Chatbot</h1>
 
-    <div id="chat-area">
-        <ul id="message-list">
-            <li class="message bot">testing 1 2 ...</li>
-            <li class="message user">test message from user</li>
-        </ul>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/index.css">
+        <title>Chatbot</title>
+    </head>
 
-    </div>
+    <body>
+        <h1>Chatbot</h1>
 
-</body>
+        <div id="chat-area">
+            <ul id="msg-list">
+                <li class="msg user">test msg from user</li>
+                <li class="msg bot">
+                    Select 1 to Place an order
+                    Select 99 to checkout order
+                    Select 98 to see order history
+                    Select 97 to see current order
+                    Select 0 to cancel order
+                </li>
 
-<script src="/index.js"></script>
+            </ul>
+
+            <input type="text" id="msg-inp">
+            <button id="send">Send</button>
+        </div>
+
+    </body>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/index.js"></script>
+
 </html>
+
+
+<!-- 
+
+Select 1 to Place an order
+Select 99 to checkout order
+Select 98 to see order history
+Select 97 to see current order
+Select 0 to cancel order
+
+ -->
