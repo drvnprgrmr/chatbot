@@ -1,7 +1,10 @@
 const { model, Schema } = require("mongoose")
 
 const mealSchema = new Schema({
-    name: String,
+    name: {
+        type: String,
+        required: true
+    },
     qty: {
         type: Number,
         default: 1,

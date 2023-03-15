@@ -28,43 +28,32 @@ io.on("connection", socket => {
 
     // Handle session
     socket.on("sid:get", async (sid) => {
-        let session = await Session.findById(sid).lean().exec()
+        // Send initial message
+        let msg =
+            "Hi there! \n\n" +
+            "Select 1 to place an order \n" +
+            "Select 99 to checkout order \n" +
+            "Select 98 to see order history \n" +
+            "Select 97 to see current order \n" +
+            "Select 0 to cancel order "
 
+        socket.emit("bot:resp", msg)
+
+        // Load the session 
+        let session = await Session.findById(sid).exec()
+        console.log("session", session)
         if (session === null) {
             // Create a session if it doesn't exist and send the id
-            session = await Session.create({})
-            socket.emit("sid:set", session._id)
+            session = await Session.create({
+                orders: [{
+                    meals: []
+                }]
+            })
+            socket.emit("sid:set", session.id)
         }
-
-        if (sid !== null) socket.emit("sid:set", "test set")
-    })
-    socket.on("msg:post", opt => {
-        
-        switch (opt) {
-            case "0": {
-                console.log("cancel order")
-                break
-            }
-
-            case "1": {
-                
-                break
-            }
-            case "97": {
-                console.log("see order")
-                break
-            }
-            case "98": {
-                console.log("see order history")
-                break
-            }
-            case "99": {
-                console.log("checkout order")
-                break
-            }
-        
-        }
-
+        // Add the session id to the socket
+        socket.sid = session.id
+        console.log("session id", socket.sid)
     })
 
     socket.on("meals:get", async () => {
@@ -73,25 +62,57 @@ io.on("connection", socket => {
         // Get all meals in the database
         const meals = await Meal.find().lean().exec()
 
-        let msg = "Select one of the following available meals: \n\n"
+        let msg = 
+            "Select one of the following available meals: \n" +
+            "Or Select 0 to cancel order.\n"
 
         meals.forEach((meal, i) => {
-            msg += `${i + 1} ${meal} \n`
+            msg += `${i + 1} ${meal.name} \n`
         })
 
         socket.emit("bot:resp", msg)
+        socket.emit("meals:data", meals)
 
     })
 
-    socket.on("order:place", order => {
+    socket.on("order:place", async (meal, callback) => {
+        console.log("Order placed", meal)
+        let msg
+        if (meal === null) {
+            msg = 
+                "Sorry that's not a part of the valid options.\n" +
+                "Choose again?\n" +
+                "Or Select 0 to cancel order"
+            callback(false)
+        } else {
+            const session = await Session.findById(socket.sid).exec()
+            
+            // Add meal to current order and save it
+            session.orders.at(-1).meals.push(meal)
+            await session.save()
+            
+            console.log("order", session.orders.at(-1))
+
+            msg = 
+                "Your order has been added successfully.\n\n" +
+                "Select 1 to place another order \n" +
+                "Select 99 to checkout order \n" +
+                "Select 98 to see order history \n" +
+                "Select 97 to see current order \n" +
+                "Select 0 to cancel order "
+            callback(true)
+        }
+        socket.emit("bot:resp", msg)
         
+
     })
+
     socket.on("invalid", () => {
         console.log("invalid option")
 
         let msg =
             "Sorry that was an invalid option. Choose from one of the following:\n\n" +
-            "Select 1 to Place an order \n" +
+            "Select 1 to place an order \n" +
             "Select 99 to checkout order \n" +
             "Select 98 to see order history \n" +
             "Select 97 to see current order \n" +

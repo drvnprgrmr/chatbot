@@ -1,14 +1,16 @@
 const { model, Schema } = require("mongoose")
 
-const Meal = require("./meals")
-
 const sessionSchema = new Schema({
     // Record order history
     orders: [{
-        meals: [Meal.schema],
+        meals: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Meal"
+            }
+        ],
         createdAt: {
             type: Date,
-            default: Date.now,
             immutable: true
         }
     }]

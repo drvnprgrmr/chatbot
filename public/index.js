@@ -3,63 +3,61 @@ const socket = io()
 const msgList = document.getElementById("msg-list")
 
 const msgInp = document.getElementById("msg-inp")
-const send = document.getElementById("send")
+const form = document.getElementById("form")
 
 let awaitingOrder = false
+let meals
 
-const id = localStorage.getItem("sid")
-console.log("id", id)
-socket.emit("sid:get", id)
+socket.emit("sid:get", localStorage.getItem("sid"))
 socket.on("sid:set", sid => localStorage.setItem("sid", sid))
 
-send.addEventListener("click", ev => {
+form.addEventListener("submit", ev => {
     ev.preventDefault()
 
-    const msg = msgInp.value.trim()
+    const opt = msgInp.value.trim()
+    console.log("opt", opt)
+
+    // Only continue if there's a message
+    if (!opt) return
+
+    // Clear input
+    msgInp.value = ""
+    
+    if (opt === "0") {
+        console.log("cancel order")
+    }
+
+    if (awaitingOrder) {
+        // Place an order on the meal with the right id
+        socket.emit("order:place", meals[opt - 1], (done) => {
+            if (done) awaitingOrder = false
+        })
+        
+        return
+    }
+
+
+    else if (opt === "1") {
+        console.log("place order")
+        socket.emit("meals:get")
+        awaitingOrder = true
+    }
+    else if (opt === "97") {
+        console.log("see order")
+    }
+    else if (opt === "98") {
+        console.log("see order history")
+    }
+    else if (opt === "99") {
+        console.log("checkout order")
+    }
+
+    else {
+        console.log("invalid option")
+        socket.emit("invalid")
+    }
 
     
-    if (msg) {
-        // Clear input
-        msgInp.value = ""
-        
-        if (awaitingOrder) {
-            socket.emit("order:place", msg)
-            awaitingOrder = false
-        }
-        // Send message to server
-        switch (msg) {
-            case "0": {
-                console.log("cancel order")
-                break
-            }
-
-            case "1": {
-                console.log("place order")
-                socket.emit("meals:get")
-                awaitingOrder = true
-                break
-            }
-            case "97": {
-                console.log("see order")
-                break
-            }
-            case "98": {
-                console.log("see order history")
-                break
-            }
-            case "99": {
-                console.log("checkout order")
-                break
-            }
-
-            default: {
-                console.log("invalid option")
-                socket.emit("invalid")
-                break
-            }
-        }
-        socket.emit("msg:post", opt)
-    }
 
 })
 
@@ -70,3 +68,10 @@ socket.on("bot:resp", msg => {
     msgEl.innerText = msg
     msgList.appendChild(msgEl)
 })
+
+socket.on("meals:data", data => {
+    console.log("meal data", data)
+    meals = data
+
+})
+
