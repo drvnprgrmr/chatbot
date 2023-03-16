@@ -3,12 +3,18 @@ const { model, Schema } = require("mongoose")
 const sessionSchema = new Schema({
     // Record order history
     orders: [{
-        meals: [
-            {
+        order: [{
+            meal: {
                 type: Schema.Types.ObjectId,
                 ref: "Meal"
+            },
+
+            qty: {
+                type: Number,
+                min: 1,
+                default: 1,
             }
-        ],
+        }],
         createdAt: {
             type: Date,
             immutable: true

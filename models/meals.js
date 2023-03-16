@@ -4,11 +4,6 @@ const mealSchema = new Schema({
     name: {
         type: String,
         required: true
-    },
-    qty: {
-        type: Number,
-        default: 1,
-        min: 1
     }
 })
 

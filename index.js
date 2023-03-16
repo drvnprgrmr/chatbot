@@ -28,20 +28,9 @@ io.on("connection", socket => {
 
     // Handle session
     socket.on("sid:get", async (sid) => {
-        // Send initial message
-        let msg =
-            "Hi there! \n\n" +
-            "Select 1 to place an order \n" +
-            "Select 99 to checkout order \n" +
-            "Select 98 to see order history \n" +
-            "Select 97 to see current order \n" +
-            "Select 0 to cancel order "
-
-        socket.emit("bot:resp", msg)
-
-        // Load the session 
+        // Load the session from the database
         let session = await Session.findById(sid).exec()
-        console.log("session", session)
+
         if (session === null) {
             // Create a session if it doesn't exist and send the id
             session = await Session.create({
@@ -64,7 +53,8 @@ io.on("connection", socket => {
 
         let msg = 
             "Select one of the following available meals: \n" +
-            "Or Select 0 to cancel order.\n"
+            "Select 0 to cancel order.\n" +
+            "Select 00 to exit menu\n\n"
 
         meals.forEach((meal, i) => {
             msg += `${i + 1} ${meal.name} \n`
@@ -75,31 +65,80 @@ io.on("connection", socket => {
 
     })
 
+    // Get the current order and display it to the user
+    socket.on("order:view", async () => {
+        // Get the current user session and populate the meals
+        const session = await Session
+            .findById(socket.sid)
+            .populate("orders.order.meal") 
+            .exec()
+
+        // Grab the most recent order
+        const order = session.orders.at(-1).order
+        console.log("current order", order)
+        let msg = "Here's you're current order:\n"
+
+        // Add each order to the message
+        order.forEach(obj => {
+            msg += `${obj.meal.name} x${obj.qty}\n`
+        })
+        
+        // Send the message to the user
+        socket.emit("bot:resp", msg)
+    })
+
     socket.on("order:place", async (meal, callback) => {
         console.log("Order placed", meal)
         let msg
         if (meal === null) {
-            msg = 
-                "Sorry that's not a part of the valid options.\n" +
-                "Choose again?\n" +
-                "Or Select 0 to cancel order"
-            callback(false)
-        } else {
-            const session = await Session.findById(socket.sid).exec()
-            
-            // Add meal to current order and save it
-            session.orders.at(-1).meals.push(meal)
-            await session.save()
-            
-            console.log("order", session.orders.at(-1))
+            // Get all meals in the database
+            const meals = await Meal.find().lean().exec()
 
             msg = 
-                "Your order has been added successfully.\n\n" +
-                "Select 1 to place another order \n" +
+                "Sorry that's not a part of the valid options.\n" +
+                "Select 0 to cancel order\n" + 
+                "Select 00 to exit menu\n\n" +
+                "Or choose again?\n" 
+            
+            // Show all meals again to the user
+            meals.forEach((meal, i) => {
+                msg += `${i + 1} ${meal.name} \n`
+            })
+            
+            // Tell the client the meal order was not placed successfully
+            callback(false)
+        } else {
+            // Get the current user session
+            const session = await Session.findById(socket.sid).exec()
+            
+            // Get the current order
+            const order = session.orders.at(-1).order
+
+            // Check if user has already ordered the meal
+            const obj_ind = order.findIndex((obj) => obj.meal.equals(meal._id))
+
+            console.log("index", obj_ind)
+            // If the user has already ordered the meal
+            // Increase the quantity
+            if (obj_ind !== -1) order[obj_ind].qty++
+
+            // Else create a new order
+            else order.push({ meal })
+
+            // Save changes to the session
+            await session.save()
+            
+            console.log("order", session.orders.at(-1).order)
+
+            msg = 
+                "Your meal has been added successfully to the order.\n\n" +
+                "Select 1 to add another meal \n" +
                 "Select 99 to checkout order \n" +
                 "Select 98 to see order history \n" +
                 "Select 97 to see current order \n" +
                 "Select 0 to cancel order "
+            
+            // Tell the client the order was successful
             callback(true)
         }
         socket.emit("bot:resp", msg)

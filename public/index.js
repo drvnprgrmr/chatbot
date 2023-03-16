@@ -8,7 +8,12 @@ const form = document.getElementById("form")
 let awaitingOrder = false
 let meals
 
-socket.emit("sid:get", localStorage.getItem("sid"))
+socket.on("connect", () => {
+    // Send the current session id to the server if it exists
+    socket.emit("sid:get", localStorage.getItem("sid"))
+
+})
+// Save the session id to local storage
 socket.on("sid:set", sid => localStorage.setItem("sid", sid))
 
 form.addEventListener("submit", ev => {
@@ -44,6 +49,7 @@ form.addEventListener("submit", ev => {
     }
     else if (opt === "97") {
         console.log("see order")
+        socket.emit("order:view")
     }
     else if (opt === "98") {
         console.log("see order history")
