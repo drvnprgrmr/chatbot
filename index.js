@@ -31,13 +31,17 @@ io.on("connection", socket => {
         // Load the session from the database
         let session = await Session.findById(sid).exec()
 
+        // If it doesn't exist, create a session
         if (session === null) {
-            // Create a session if it doesn't exist and send the id
             session = await Session.create({
-                orders: [{
-                    meals: []
-                }]
+                orders: [
+                    {
+                        order: []
+                    }
+                ]
             })
+
+            // Send the id to the client
             socket.emit("sid:set", session.id)
         }
         // Add the session id to the socket
@@ -45,20 +49,23 @@ io.on("connection", socket => {
         console.log("session id", socket.sid)
     })
 
+    // Get the list of available meals
     socket.on("meals:get", async () => {
-        console.log("get available meals")
-
         // Get all meals in the database
         const meals = await Meal.find().lean().exec()
 
-        let msg = 
-            "Select one of the following available meals: \n" +
-            "Select 0 to cancel order.\n" +
-            "Select 00 to exit menu\n\n"
-
+        let msg = "Select one of the following available meals: \n"
+        
+        // Add available meals to message 
         meals.forEach((meal, i) => {
             msg += `${i + 1} ${meal.name} \n`
         })
+
+        // Add exit options
+        msg += 
+            "\nSelect 0 to cancel order.\n" +
+            "Select 00 to exit menu"
+
 
         socket.emit("bot:resp", msg)
         socket.emit("meals:data", meals)
@@ -67,6 +74,8 @@ io.on("connection", socket => {
 
     // Get the current order and display it to the user
     socket.on("order:view", async () => {
+        let msg
+
         // Get the current user session and populate the meals
         const session = await Session
             .findById(socket.sid)
@@ -75,18 +84,24 @@ io.on("connection", socket => {
 
         // Grab the most recent order
         const order = session.orders.at(-1).order
-        console.log("current order", order)
-        let msg = "Here's you're current order:\n"
 
-        // Add each order to the message
-        order.forEach(obj => {
-            msg += `${obj.meal.name} x${obj.qty}\n`
-        })
+        // If there are meals in the order display it
+        if (!order.length) msg = "There are no meals in the current order."
+        else {
+            msg = "Here's you're current order:\n"
+    
+            // Add each order to the message
+            order.forEach(obj => {
+                msg += `${obj.meal.name} x${obj.qty}\n`
+            })
+
+        } 
         
         // Send the message to the user
         socket.emit("bot:resp", msg)
     })
 
+    // Add meals to order
     socket.on("order:place", async (meal, callback) => {
         console.log("Order placed", meal)
         let msg
@@ -97,7 +112,7 @@ io.on("connection", socket => {
             msg = 
                 "Sorry that's not a part of the valid options.\n" +
                 "Select 0 to cancel order\n" + 
-                "Select 00 to exit menu\n\n" +
+                "Select 00 to exit the order menu\n\n" +
                 "Or choose again?\n" 
             
             // Show all meals again to the user
@@ -142,10 +157,40 @@ io.on("connection", socket => {
             callback(true)
         }
         socket.emit("bot:resp", msg)
-        
 
     })
 
+    // Cancel the current order
+    socket.on("order:cancel", async () => {
+        console.log("cancel order")
+        let msg
+
+        // Get the current session
+        const session = await Session.findById(socket.sid).exec()
+
+        // Grab the current order
+        let order = session.orders.at(-1).order
+
+        if (!order.length) msg = "You have nothing in your current order."
+        else {
+            // Empty the order
+            session.orders.at(-1).order = []
+
+            // Save changes to the database
+            await session.save()
+
+            msg = "Your order has been canceled successfully!"
+        }
+        
+        socket.emit("bot:resp", msg)
+    })
+
+    // Exit the meal selecting menu
+    socket.on("order:exitmenu", () => {
+        socket.emit("bot:resp", "Menu exited")
+    })
+
+    // Send message when an invalid option is sent
     socket.on("invalid", () => {
         console.log("invalid option")
 

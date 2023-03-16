@@ -30,15 +30,21 @@ form.addEventListener("submit", ev => {
     
     if (opt === "0") {
         console.log("cancel order")
+        socket.emit("order:cancel")
     }
 
-    if (awaitingOrder) {
-        // Place an order on the meal with the right id
-        socket.emit("order:place", meals[opt - 1], (done) => {
-            if (done) awaitingOrder = false
-        })
-        
-        return
+    else if (awaitingOrder) {
+        if (opt === "00") {
+            // Exit the menu
+            awaitingOrder = false
+            socket.emit("order:exitmenu")
+        } else {
+            // Place an order on the meal with the right id
+            socket.emit("order:place", meals[opt - 1], (done) => {
+                if (done) awaitingOrder = false
+            })
+        }
+
     }
 
 
