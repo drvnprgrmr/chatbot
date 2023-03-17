@@ -1,5 +1,19 @@
 const { model, Schema } = require("mongoose")
 
+/**
+const orderSchema = new Schema({
+    meal: {
+        type: Schema.Types.ObjectId,
+        ref: "Meal"
+    },
+
+    qty: {
+        type: Number,
+        min: 1,
+        default: 1,
+    }
+})
+ */
 const sessionSchema = new Schema({
     // Record order history
     orders: [{
@@ -15,9 +29,9 @@ const sessionSchema = new Schema({
                 default: 1,
             }
         }],
-        createdAt: {
+        checkoutAt: {
             type: Date,
-            immutable: true
+            default: Date.now,  
         }
     }]
 })

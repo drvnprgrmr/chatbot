@@ -59,9 +59,11 @@ form.addEventListener("submit", ev => {
     }
     else if (opt === "98") {
         console.log("see order history")
+        socket.emit("order:history")
     }
     else if (opt === "99") {
         console.log("checkout order")
+        socket.emit("order:checkout")
     }
 
     else {

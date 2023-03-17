@@ -35,9 +35,8 @@ io.on("connection", socket => {
         if (session === null) {
             session = await Session.create({
                 orders: [
-                    {
-                        order: []
-                    }
+                    // Add the first order
+                    { order: [] }
                 ]
             })
 
@@ -151,7 +150,7 @@ io.on("connection", socket => {
                 "Select 99 to checkout order \n" +
                 "Select 98 to see order history \n" +
                 "Select 97 to see current order \n" +
-                "Select 0 to cancel order "
+                "Select 0 to cancel order"
             
             // Tell the client the order was successful
             callback(true)
@@ -188,6 +187,91 @@ io.on("connection", socket => {
     // Exit the meal selecting menu
     socket.on("order:exitmenu", () => {
         socket.emit("bot:resp", "Menu exited")
+    })
+
+    // Checkout the current order
+    socket.on("order:checkout", async () => {
+        let msg
+        
+        // Load the user's session and populate the orders
+        const session = await Session
+            .findById(socket.sid)
+            .populate("orders.order.meal")
+            .exec()
+
+        // Get the most recent order object
+        const orderObj = session.orders.at(-1)
+
+        // Only checkout when there is
+        if (orderObj.order.length) {
+            // Set the checkout date to now
+            orderObj.checkoutAt = new Date()
+            
+            // Create a new empty order to be filled out
+            session.orders.push({ order: [] })
+            
+            // Save the session
+            await session.save()
+            
+            msg = "Order placed!\n\n" +
+                "Select 1 to place a new order \n" +
+                "Select 99 to checkout order \n" +
+                "Select 98 to see order history \n" +
+                "Select 97 to see current order \n" +
+                "Select 0 to cancel order"
+        }
+        // If there's nothing in the order
+        else { 
+            msg = "No order to place.\n\n" +
+                "Select 1 to place order \n" +
+                "Select 99 to checkout order \n" +
+                "Select 98 to see order history \n" +
+                "Select 97 to see current order \n" +
+                "Select 0 to cancel order"
+        }
+
+        // Send the message to the user
+        socket.emit("bot:resp", msg)
+    })
+
+    // See the order history
+    socket.on("order:history", async () => {
+        let msg
+
+        // Load the user's session and populate the orders
+        const session = await Session
+            .findById(socket.sid)
+            .populate("orders.order.meal")
+            .exec()
+
+
+        if (session.orders.length > 1) {
+            msg = "Here's your order history: \n\n"
+
+            // Loop through the orders excluding the last one (it's empty)
+            session.orders.slice(0,-1).forEach((orderObj, i) => {
+                msg += `Order #${i + 1}\n\n`
+            
+                // Add the meals and get the total quantity
+                let total = 0
+                orderObj.order.forEach(ord => {
+                    total += ord.qty
+                    msg += `${ord.meal.name} x${ord.qty}\n`
+                })
+
+                // Format the checkout date
+                const date = orderObj.checkoutAt.toLocaleString('en-US',
+                    { dateStyle: 'medium', timeStyle: 'short' }
+                )
+
+                msg +=
+                    `Total number of items: ${total} \n` +
+                    `Order was checked out at ${date}\n\n`
+            })
+        } 
+        else msg = "You haven't checked out any orders yet."
+
+        socket.emit("bot:resp", msg)
     })
 
     // Send message when an invalid option is sent
