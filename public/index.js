@@ -19,8 +19,8 @@ socket.on("sid:set", sid => localStorage.setItem("sid", sid))
 form.addEventListener("submit", ev => {
     ev.preventDefault()
 
+    // Get the option selected from the user
     const opt = msgInp.value.trim()
-    console.log("opt", opt)
 
     // Only continue if there's a message
     if (!opt) return
@@ -28,10 +28,7 @@ form.addEventListener("submit", ev => {
     // Clear input
     msgInp.value = ""
     
-    if (opt === "0") {
-        console.log("cancel order")
-        socket.emit("order:cancel")
-    }
+    if (opt === "0") socket.emit("order:cancel")
 
     else if (awaitingOrder) {
         if (opt === "00") {
@@ -47,29 +44,23 @@ form.addEventListener("submit", ev => {
 
     }
 
-
     else if (opt === "1") {
-        console.log("place order")
+        // Get meals and move to the ordering menu
         socket.emit("meals:get")
         awaitingOrder = true
     }
-    else if (opt === "97") {
-        console.log("see order")
-        socket.emit("order:view")
-    }
-    else if (opt === "98") {
-        console.log("see order history")
-        socket.emit("order:history")
-    }
-    else if (opt === "99") {
-        console.log("checkout order")
-        socket.emit("order:checkout")
-    }
+    // View the current order
+    else if (opt === "97") socket.emit("order:view")
 
-    else {
-        console.log("invalid option")
-        socket.emit("invalid")
-    }
+    // Get your order history
+    else if (opt === "98") socket.emit("order:history")
+
+    // Checkout your current order
+    else if (opt === "99") socket.emit("order:checkout")
+
+    // Get message for invalid option
+    else socket.emit("invalid", opt)
+    
 
     
 
@@ -83,9 +74,6 @@ socket.on("bot:resp", msg => {
     msgList.appendChild(msgEl)
 })
 
-socket.on("meals:data", data => {
-    console.log("meal data", data)
-    meals = data
-
-})
+// Save the meal data gotten from the server
+socket.on("meals:data", data => { meals = data })
 

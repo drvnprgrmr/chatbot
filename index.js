@@ -45,7 +45,6 @@ io.on("connection", socket => {
         }
         // Add the session id to the socket
         socket.sid = session.id
-        console.log("session id", socket.sid)
     })
 
     // Get the list of available meals
@@ -66,7 +65,10 @@ io.on("connection", socket => {
             "Select 00 to exit menu"
 
 
+        // Respond with message
         socket.emit("bot:resp", msg)
+
+        // Send the meal data to the client
         socket.emit("meals:data", meals)
 
     })
@@ -96,14 +98,14 @@ io.on("connection", socket => {
 
         } 
         
-        // Send the message to the user
+        // Respond with message
         socket.emit("bot:resp", msg)
     })
 
     // Add meals to order
     socket.on("order:place", async (meal, callback) => {
-        console.log("Order placed", meal)
         let msg
+
         if (meal === null) {
             // Get all meals in the database
             const meals = await Meal.find().lean().exec()
@@ -121,7 +123,8 @@ io.on("connection", socket => {
             
             // Tell the client the meal order was not placed successfully
             callback(false)
-        } else {
+        } 
+        else {
             // Get the current user session
             const session = await Session.findById(socket.sid).exec()
             
@@ -131,7 +134,6 @@ io.on("connection", socket => {
             // Check if user has already ordered the meal
             const obj_ind = order.findIndex((obj) => obj.meal.equals(meal._id))
 
-            console.log("index", obj_ind)
             // If the user has already ordered the meal
             // Increase the quantity
             if (obj_ind !== -1) order[obj_ind].qty++
@@ -141,8 +143,6 @@ io.on("connection", socket => {
 
             // Save changes to the session
             await session.save()
-            
-            console.log("order", session.orders.at(-1).order)
 
             msg = 
                 "Your meal has been added successfully to the order.\n\n" +
@@ -155,13 +155,13 @@ io.on("connection", socket => {
             // Tell the client the order was successful
             callback(true)
         }
-        socket.emit("bot:resp", msg)
 
+        // Respond with message
+        socket.emit("bot:resp", msg)
     })
 
     // Cancel the current order
     socket.on("order:cancel", async () => {
-        console.log("cancel order")
         let msg
 
         // Get the current session
@@ -170,6 +170,7 @@ io.on("connection", socket => {
         // Grab the current order
         let order = session.orders.at(-1).order
 
+        // If the user as items in the current order remove it
         if (!order.length) msg = "You have nothing in your current order."
         else {
             // Empty the order
@@ -181,10 +182,11 @@ io.on("connection", socket => {
             msg = "Your order has been canceled successfully!"
         }
         
+        // Respond with message
         socket.emit("bot:resp", msg)
     })
 
-    // Exit the meal selecting menu
+    // Inform the user the meal selecting menu has been exited
     socket.on("order:exitmenu", () => {
         socket.emit("bot:resp", "Menu exited")
     })
@@ -230,7 +232,7 @@ io.on("connection", socket => {
                 "Select 0 to cancel order"
         }
 
-        // Send the message to the user
+        // Respond with message
         socket.emit("bot:resp", msg)
     })
 
@@ -271,21 +273,22 @@ io.on("connection", socket => {
         } 
         else msg = "You haven't checked out any orders yet."
 
+        // Respond with message
         socket.emit("bot:resp", msg)
     })
 
     // Send message when an invalid option is sent
-    socket.on("invalid", () => {
-        console.log("invalid option")
-
+    socket.on("invalid", opt => {
         let msg =
-            "Sorry that was an invalid option. Choose from one of the following:\n\n" +
+            `Sorry! The option you chose (${opt}) was invalid. \n` + 
+            "Choose from one of the following:\n\n" +
             "Select 1 to place an order \n" +
             "Select 99 to checkout order \n" +
             "Select 98 to see order history \n" +
             "Select 97 to see current order \n" +
             "Select 0 to cancel order "
 
+        // Respond with message
         socket.emit("bot:resp", msg)
     })
 })
