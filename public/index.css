@@ -1,0 +1,110 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Scrollbar */
+*::-webkit-scrollbar { 
+    width: 3px;
+    background-color: #4b5267;
+}
+
+*::-webkit-scrollbar-thumb {
+	border-radius: 1rem;
+    background-color: #c2cae8;
+}
+
+
+
+/* Google Icons */
+.material-symbols-rounded {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 40
+}
+
+body {
+  margin: 0;
+  font-family: 'Abel', sans-serif;
+  background-color: #c2cae8;
+  color: #373f51;
+}
+
+h1 {
+    margin: 1rem 1rem;
+}
+
+#chat-area {
+    display: flex;
+    flex-direction: column;
+
+    width: 70%;
+    max-width: 750px;
+    height: 90vh;
+
+    margin: 0 auto;
+    padding: 1rem;
+
+    background-color: #4b5267;
+}
+
+#msg-list {
+    flex-grow: 1;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+
+    overflow-y: auto;
+}
+
+.msg {
+    font-weight: 600;
+    padding: .5rem 1rem;
+    border-radius: .5rem;
+    max-width: 50%;
+    min-width: 4rem;
+    width: fit-content;
+
+}
+
+.bot {
+    background-color: #8cc084;
+}
+
+.usr {
+    background-color: #a37c40;
+    margin-left: auto;
+    margin-right: .2rem;
+}
+
+form {
+    display: flex;
+    height: 2rem;
+}
+
+#msg-inp {
+    flex-grow: 1;
+    background-color: #4b5267;
+    color: #a37c40;
+
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 2px #c2cae8 solid;
+
+    outline: none;
+
+}
+
+#send {
+    background-color: #4b5267;
+    border: none;
+    margin-left: 1rem;
+    color: #c2cae8;
+}
+#send:hover {
+    cursor: pointer;
+}

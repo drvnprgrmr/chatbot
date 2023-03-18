@@ -25,6 +25,9 @@ form.addEventListener("submit", ev => {
     // Only continue if there's a message
     if (!opt) return
 
+    // Add message to list
+    createMsg("usr", opt)
+
     // Clear input
     msgInp.value = ""
     
@@ -66,13 +69,25 @@ form.addEventListener("submit", ev => {
 
 })
 
-socket.on("bot:resp", msg => {
-    const msgEl = document.createElement("li")
-    msgEl.classList.add("msg", "bot")
+// Create a message for the bot
+socket.on("bot:resp", msg => createMsg("bot", msg))
 
-    msgEl.innerText = msg
+
+// Function to help create messages
+function createMsg(usr, text) {
+    // Create the list element
+    const msgEl = document.createElement("li")
+    
+    // Add necessary classes
+    msgEl.classList.add("msg", usr)
+
+    // Add the message text
+    msgEl.innerText = text
+
+    // Add it to the list of messages
     msgList.appendChild(msgEl)
-})
+
+}
 
 // Save the meal data gotten from the server
 socket.on("meals:data", data => { meals = data })
