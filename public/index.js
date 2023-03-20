@@ -1,5 +1,3 @@
-const socket = io()
-
 const msgList = document.getElementById("msg-list")
 
 const msgInp = document.getElementById("msg-inp")
@@ -8,15 +6,8 @@ const form = document.getElementById("form")
 let awaitingOrder = false
 let meals
 
-socket.on("connect", () => {
-    // Send the current session id to the server if it exists
-    socket.emit("sid:get", localStorage.getItem("sid"))
 
-})
-// Save the session id to local storage
-socket.on("sid:set", sid => localStorage.setItem("sid", sid))
-
-form.addEventListener("submit", ev => {
+form.addEventListener("submit", async (ev) => {
     ev.preventDefault()
 
     // Get the option selected from the user
@@ -31,47 +22,70 @@ form.addEventListener("submit", ev => {
     // Clear input
     msgInp.value = ""
     
-    if (opt === "0") socket.emit("order:cancel")
+    if (opt === "0") {
+        await getResp("/order/cancel", "POST")
+    }
 
     else if (awaitingOrder) {
         if (opt === "00") {
             // Exit the menu
             awaitingOrder = false
-            socket.emit("order:exitmenu")
+            createMsg("bot", "Menu exited")
         } else {
             // Place an order on the meal with the right id
-            socket.emit("order:place", meals[opt - 1], (done) => {
-                if (done) awaitingOrder = false
-            })
+            const data = await getResp(`/order/place/${meals[opt - 1]}`, "POST")
+
+            if (data.done) awaitingOrder = false
+            // socket.emit("order:place", meals[opt - 1], (done) => {
+            //     if (done) awaitingOrder = false
+            // })
         }
 
     }
 
     else if (opt === "1") {
         // Get meals and move to the ordering menu
-        socket.emit("meals:get")
+        const data = await getResp("/meals", "GET")
         awaitingOrder = true
+
+        // Save the meal data gotten from the server
+        meals = data.mealIds
     }
     // View the current order
-    else if (opt === "97") socket.emit("order:view")
+    else if (opt === "97") {
+        await getResp("/order/view", "GET")
+    }
 
     // Get your order history
-    else if (opt === "98") socket.emit("order:history")
+    else if (opt === "98") {
+        await getResp("/order/history", "GET")
+    }
 
     // Checkout your current order
-    else if (opt === "99") socket.emit("order:checkout")
+    else if (opt === "99") {
+        await getResp("/order/checkout", "POST")
+    }
 
     // Get message for invalid option
-    else socket.emit("invalid", opt)
+    else {
+        await getResp(`/invalid/${opt}`, "GET")
+    }
     
-
-    
-
 })
 
-// Create a message for the bot
-socket.on("bot:resp", msg => createMsg("bot", msg))
 
+
+async function getResp(route, method) {
+    // Get response data
+    const data = await fetch(route, {method}).then(res => res.json())
+
+    // Create message from bot
+    createMsg("bot", data.msg)
+
+    // Return data
+    return data
+    
+}
 
 // Function to help create messages
 function createMsg(usr, text) {
@@ -92,6 +106,5 @@ function createMsg(usr, text) {
 
 }
 
-// Save the meal data gotten from the server
-socket.on("meals:data", data => { meals = data })
+
 
