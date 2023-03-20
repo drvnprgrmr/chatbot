@@ -87,6 +87,9 @@ function createMsg(usr, text) {
     // Add it to the list of messages
     msgList.appendChild(msgEl)
 
+    // Scroll to the end
+    msgList.scrollTop = msgList.scrollHeight
+
 }
 
 // Save the meal data gotten from the server

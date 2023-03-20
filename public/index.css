@@ -63,6 +63,7 @@ h1 {
 .msg {
     font-weight: 600;
     padding: .5rem 1rem;
+    margin-bottom: .5rem;
     border-radius: .5rem;
     max-width: 50%;
     min-width: 4rem;
